@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -10,9 +10,10 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import LadyImg from '../assets/images/lady.jpg';
 import { FaArrowLeft } from '../assets/icons/icons';
+import { Formik, Form, FormikErrors } from 'formik';
+import { signUpValidationSchema } from '../validation/schemaValidation';
 
 function Copyright(props: any) {
     return (
@@ -32,145 +33,370 @@ function Copyright(props: any) {
     );
 }
 
-// TODO remove, this demo shouldn't need to reset the theme.
-const defaultTheme = createTheme();
+interface Values {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    shippingAddress?: {
+        address1: string;
+        address2: string | undefined;
+        city: string;
+        state: string;
+        postalCode: number;
+        country: string;
+    };
+}
 
 export default function Signup() {
     const navigate = useNavigate();
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        console.log({
-            email: data.get('email'),
-            password: data.get('password'),
-        });
+    const [showAdditionalSignUpForm, setShowAdditionalSignUpForm] =
+        useState(false);
+
+    const handleNextBtn = (values: Values, errors: FormikErrors<Values>) => {
+        return (
+            values.firstName === '' ||
+            values.lastName === '' ||
+            values.email === '' ||
+            values.password === '' ||
+            !!errors.firstName ||
+            !!errors.lastName ||
+            !!errors.email ||
+            !!errors.password
+        );
     };
 
     return (
-        <ThemeProvider theme={defaultTheme}>
-            <Grid container component="main" sx={{ height: '100vh' }}>
-                <CssBaseline />
-                <Grid
-                    item
-                    xs={false}
-                    sm={4}
-                    md={7}
-                    sx={{
-                        backgroundImage: `url(${LadyImg})`,
-                        backgroundRepeat: 'no-repeat',
-                        backgroundColor: (t) =>
-                            t.palette.mode === 'light'
-                                ? t.palette.grey[50]
-                                : t.palette.grey[900],
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                    }}
+        <Grid
+            container
+            component="main"
+            sx={{ height: '100vh' }}
+            className="overflow-hidden"
+        >
+            <CssBaseline />
+            <Grid
+                item
+                xs={false}
+                sm={4}
+                md={7}
+                sx={{
+                    backgroundImage: `url(${LadyImg})`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundColor: (t) =>
+                        t.palette.mode === 'light'
+                            ? t.palette.grey[50]
+                            : t.palette.grey[900],
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
+            />
+            <Grid
+                className="relative"
+                item
+                xs={12}
+                sm={8}
+                md={5}
+                component={Paper}
+                elevation={6}
+                square
+            >
+                <Copyright
+                    className="absolute bottom-1 left-[50%] -translate-x-2/4"
+                    sx={{ mt: 5 }}
                 />
-                <Grid
-                    className="relative"
-                    item
-                    xs={12}
-                    sm={8}
-                    md={5}
-                    component={Paper}
-                    elevation={6}
-                    square
+                <p
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-x-2  text-[#1976d2] mt-6 ml-8 cursor-pointer"
                 >
-                    <Copyright
-                        className="absolute bottom-1 left-[50%] -translate-x-2/4"
-                        sx={{ mt: 5 }}
-                    />
-                    <p
-                        onClick={() => navigate('/')}
-                        className="flex items-center gap-x-2  text-[#1976d2] mt-6 ml-8 cursor-pointer"
-                    >
-                        <FaArrowLeft /> Home
-                    </p>
-                    <CssBaseline />
-                    <Box
-                        sx={{
-                            my: 8,
-                            mx: 4,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
+                    <FaArrowLeft /> Home
+                </p>
+                <CssBaseline />
+                <Box
+                    sx={{
+                        my: 8,
+                        mx: 4,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                        <LockOutlinedIcon />
+                    </Avatar>
+                    <Typography component="h1" variant="h5">
+                        Sign up
+                    </Typography>
+                    {/* {!showAdditionalSignUpForm && ( */}
+                    <Formik
+                        initialValues={{
+                            firstName: '',
+                            lastName: '',
+                            email: '',
+                            password: '',
+                            shippingAddress: {
+                                address1: '',
+                                address2: '',
+                                city: '',
+                                state: '',
+                                postalCode: 0,
+                                country: '',
+                            },
+                        }}
+                        validationSchema={signUpValidationSchema}
+                        onSubmit={(values: Values, { resetForm }) => {
+                            console.log(values, 'values >>>>');
+                            resetForm();
+                            setShowAdditionalSignUpForm(false);
                         }}
                     >
-                        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                            <LockOutlinedIcon />
-                        </Avatar>
-                        <Typography component="h1" variant="h5">
-                            Sign up
-                        </Typography>
-                        <Box
-                            component="form"
-                            noValidate
-                            onSubmit={handleSubmit}
-                            sx={{ mt: 3 }}
-                        >
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6}>
-                                    <TextField
-                                        autoComplete="given-name"
-                                        name="firstName"
-                                        required
-                                        fullWidth
-                                        id="firstName"
-                                        label="First Name"
-                                        autoFocus
-                                    />
-                                </Grid>
-                                <Grid item xs={12} sm={6}>
-                                    <TextField
-                                        required
-                                        fullWidth
-                                        id="lastName"
-                                        label="Last Name"
-                                        name="lastName"
-                                        autoComplete="family-name"
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        required
-                                        fullWidth
-                                        id="email"
-                                        label="Email Address"
-                                        name="email"
-                                        autoComplete="email"
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        required
-                                        fullWidth
-                                        name="password"
-                                        label="Password"
-                                        type="password"
-                                        id="password"
-                                        autoComplete="new-password"
-                                    />
-                                </Grid>
-                            </Grid>
-                            <Button
-                                type="submit"
-                                fullWidth
-                                variant="contained"
-                                sx={{ mt: 3, mb: 2 }}
-                            >
-                                Sign Up
-                            </Button>
-                            <Grid container justifyContent="flex-end">
-                                <Grid item>
-                                    <Link href="/login" variant="body2">
-                                        Already have an account? Sign in
-                                    </Link>
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    </Box>
-                </Grid>
+                        {({
+                            values,
+                            handleChange,
+                            handleBlur,
+                            touched,
+                            errors,
+                        }) => (
+                            <Form>
+                                <Box
+                                    className={`${!showAdditionalSignUpForm ? 'translate-x-0' : 'translate-x-[100%] fixed top-0 left-[100%]'} px-[32px] transition-all duration-500 ease-in-out `}
+                                    sx={{ mt: 3, textAlign: 'right' }}
+                                >
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                error={
+                                                    touched.firstName &&
+                                                    !!errors.firstName
+                                                }
+                                                autoComplete="given-name"
+                                                name="firstName"
+                                                required
+                                                fullWidth
+                                                id="firstName"
+                                                value={values.firstName}
+                                                label="First Name"
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                helperText={
+                                                    touched.firstName &&
+                                                    errors.firstName
+                                                }
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                error={
+                                                    touched.lastName &&
+                                                    !!errors.lastName
+                                                }
+                                                required
+                                                fullWidth
+                                                id="lastName"
+                                                label="Last Name"
+                                                name="lastName"
+                                                value={values.lastName}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                autoComplete="family-name"
+                                                helperText={
+                                                    touched.lastName &&
+                                                    errors.lastName
+                                                }
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                error={
+                                                    touched.email &&
+                                                    !!errors.email
+                                                }
+                                                required
+                                                fullWidth
+                                                id="email"
+                                                label="Email Address"
+                                                name="email"
+                                                value={values.email}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                autoComplete="email"
+                                                helperText={
+                                                    touched.email &&
+                                                    errors.email
+                                                }
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                error={
+                                                    touched.password &&
+                                                    !!errors.password
+                                                }
+                                                required
+                                                fullWidth
+                                                name="password"
+                                                label="Password"
+                                                type="password"
+                                                id="password"
+                                                value={values.password}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                autoComplete="new-password"
+                                                helperText={
+                                                    touched.password &&
+                                                    errors.password
+                                                }
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                    <Button
+                                        className="ml-[80%]"
+                                        variant="contained"
+                                        onClick={() =>
+                                            setShowAdditionalSignUpForm(true)
+                                        }
+                                        sx={{ mt: 3, mb: 2 }}
+                                        disabled={handleNextBtn(values, errors)}
+                                    >
+                                        Next
+                                    </Button>
+                                    <Grid container justifyContent="flex-end">
+                                        <Grid item>
+                                            <Link href="/login" variant="body2">
+                                                Already have an account? Sign in
+                                            </Link>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+                                {/* )} */}
+                                {/* {showAdditionalSignUpForm && ( */}
+                                <Box
+                                    className={`${showAdditionalSignUpForm ? 'translate-x-0' : 'translate-x-[100%] fixed top-0 left-[100%]'} px-[32px] transition-all duration-500 ease-in-out `}
+                                    sx={{ mt: 3, textAlign: 'right' }}
+                                >
+                                    <p className="text-left mb-5 text-[#8f9092]">
+                                        These fields are optional. You can
+                                        update it later.
+                                    </p>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                autoComplete="address1"
+                                                name="shippingAddress.address1"
+                                                value={
+                                                    values.shippingAddress
+                                                        ?.address1
+                                                }
+                                                fullWidth
+                                                id="address1"
+                                                label="Address 1"
+                                                onChange={handleChange}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                id="address2"
+                                                label="Address 2"
+                                                name="shippingAddress.address2"
+                                                value={
+                                                    values.shippingAddress
+                                                        ?.address2
+                                                }
+                                                onChange={handleChange}
+                                                autoComplete="address2"
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                autoComplete="city"
+                                                name="shippingAddress.city"
+                                                value={
+                                                    values.shippingAddress?.city
+                                                }
+                                                onChange={handleChange}
+                                                fullWidth
+                                                id="city"
+                                                label="City"
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                id="state"
+                                                label="State"
+                                                name="shippingAddress.state"
+                                                value={
+                                                    values.shippingAddress
+                                                        ?.state
+                                                }
+                                                onChange={handleChange}
+                                                autoComplete="state"
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                autoComplete="postalCode"
+                                                name="shippingAddress.postalCode"
+                                                value={
+                                                    values.shippingAddress
+                                                        ?.postalCode === 0
+                                                        ? ''
+                                                        : values.shippingAddress
+                                                              ?.postalCode
+                                                }
+                                                onChange={handleChange}
+                                                fullWidth
+                                                id="postalCode"
+                                                label="Postal Code"
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                label="Country"
+                                                id="country"
+                                                name="shippingAddress.country"
+                                                value={
+                                                    values.shippingAddress
+                                                        ?.country
+                                                }
+                                                onChange={handleChange}
+                                                autoComplete="country"
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                    <Button
+                                        className="ml-[80%]"
+                                        variant="contained"
+                                        onClick={() =>
+                                            setShowAdditionalSignUpForm(false)
+                                        }
+                                        sx={{ mt: 3, mb: 2, mr: 2 }}
+                                    >
+                                        Back
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        className="ml-[80%]"
+                                        variant="contained"
+                                        sx={{ mt: 3, mb: 2 }}
+                                    >
+                                        Skip & Continue
+                                    </Button>
+                                    <Grid container justifyContent="flex-end">
+                                        <Grid item>
+                                            <Link href="/login" variant="body2">
+                                                Already have an account? Sign in
+                                            </Link>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+                            </Form>
+                        )}
+                        {/* )} */}
+                    </Formik>
+                </Box>
             </Grid>
-        </ThemeProvider>
+        </Grid>
     );
 }
