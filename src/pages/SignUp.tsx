@@ -14,6 +14,11 @@ import LadyImg from '../assets/images/lady.jpg';
 import { FaArrowLeft } from '../assets/icons/icons';
 import { Formik, Form, FormikErrors } from 'formik';
 import { signUpValidationSchema } from '../validation/schemaValidation';
+import { signUpCredentialsType } from '../types/types';
+import { handleUserRegistration } from '../services/userService';
+import Alerts from '../components/common/Alert';
+import axios from 'axios';
+import { ValidateAxiosError } from '../types/types';
 
 function Copyright(props: any) {
     return (
@@ -33,27 +38,24 @@ function Copyright(props: any) {
     );
 }
 
-interface Values {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    shippingAddress?: {
-        address1: string;
-        address2: string | undefined;
-        city: string;
-        state: string;
-        postalCode: number;
-        country: string;
-    };
+interface StateType {
+    status: boolean;
+    errorMsg: string | undefined;
 }
 
 export default function Signup() {
     const navigate = useNavigate();
+    const [error, setError] = useState<StateType>({
+        status: false,
+        errorMsg: '',
+    });
     const [showAdditionalSignUpForm, setShowAdditionalSignUpForm] =
         useState(false);
 
-    const handleNextBtn = (values: Values, errors: FormikErrors<Values>) => {
+    const handleNextBtn = (
+        values: signUpCredentialsType,
+        errors: FormikErrors<signUpCredentialsType>
+    ) => {
         return (
             values.firstName === '' ||
             values.lastName === '' ||
@@ -126,11 +128,12 @@ export default function Signup() {
                     <Typography component="h1" variant="h5">
                         Sign up
                     </Typography>
-                    {/* {!showAdditionalSignUpForm && ( */}
+
                     <Formik
                         initialValues={{
                             firstName: '',
                             lastName: '',
+                            mobile: 0,
                             email: '',
                             password: '',
                             shippingAddress: {
@@ -143,10 +146,36 @@ export default function Signup() {
                             },
                         }}
                         validationSchema={signUpValidationSchema}
-                        onSubmit={(values: Values, { resetForm }) => {
-                            console.log(values, 'values >>>>');
-                            resetForm();
-                            setShowAdditionalSignUpForm(false);
+                        onSubmit={async (
+                            values: signUpCredentialsType,
+                            { resetForm }
+                        ) => {
+                            try {
+                                const response =
+                                    await handleUserRegistration(values);
+                                console.log(response, 'signup response >>>');
+                                navigate('/login');
+                            } catch (err) {
+                                console.log(err, 'error in signup form');
+                                if (
+                                    axios.isAxiosError<
+                                        ValidateAxiosError,
+                                        Record<string, unknown>
+                                    >(err)
+                                ) {
+                                    const msg = err.response?.data.message;
+                                    setError((prevState) => {
+                                        return {
+                                            ...prevState,
+                                            status: true,
+                                            errorMsg: msg,
+                                        };
+                                    });
+                                }
+                                resetForm();
+                                setShowAdditionalSignUpForm(false);
+                                throw err;
+                            }
                         }}
                     >
                         {({
@@ -155,12 +184,28 @@ export default function Signup() {
                             handleBlur,
                             touched,
                             errors,
+                            isSubmitting,
                         }) => (
                             <Form>
                                 <Box
                                     className={`${!showAdditionalSignUpForm ? 'translate-x-0' : 'translate-x-[100%] fixed top-0 left-[100%]'} px-[32px] transition-all duration-500 ease-in-out `}
                                     sx={{ mt: 3, textAlign: 'right' }}
                                 >
+                                    <Alerts
+                                        color="error"
+                                        severity="error"
+                                        errorStatus={error.status}
+                                        handleClick={() =>
+                                            setError((prevState) => {
+                                                return {
+                                                    ...prevState,
+                                                    status: false,
+                                                };
+                                            })
+                                        }
+                                    >
+                                        {error?.errorMsg}
+                                    </Alerts>
                                     <Grid container spacing={2}>
                                         <Grid item xs={12} sm={6}>
                                             <TextField
@@ -201,6 +246,31 @@ export default function Signup() {
                                                 helperText={
                                                     touched.lastName &&
                                                     errors.lastName
+                                                }
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                error={
+                                                    touched.mobile &&
+                                                    !!errors.mobile
+                                                }
+                                                required
+                                                fullWidth
+                                                id="mobile"
+                                                label="Mobile"
+                                                name="mobile"
+                                                value={
+                                                    values.mobile === 0
+                                                        ? ''
+                                                        : values.mobile
+                                                }
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                autoComplete="mobile"
+                                                helperText={
+                                                    touched.mobile &&
+                                                    errors.mobile
                                                 }
                                             />
                                         </Grid>
@@ -267,8 +337,6 @@ export default function Signup() {
                                         </Grid>
                                     </Grid>
                                 </Box>
-                                {/* )} */}
-                                {/* {showAdditionalSignUpForm && ( */}
                                 <Box
                                     className={`${showAdditionalSignUpForm ? 'translate-x-0' : 'translate-x-[100%] fixed top-0 left-[100%]'} px-[32px] transition-all duration-500 ease-in-out `}
                                     sx={{ mt: 3, textAlign: 'right' }}
@@ -381,7 +449,9 @@ export default function Signup() {
                                         variant="contained"
                                         sx={{ mt: 3, mb: 2 }}
                                     >
-                                        Skip & Continue
+                                        {isSubmitting
+                                            ? 'Submitting...'
+                                            : 'Skip & Continue'}
                                     </Button>
                                     <Grid container justifyContent="flex-end">
                                         <Grid item>

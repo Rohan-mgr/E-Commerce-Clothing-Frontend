@@ -3,6 +3,9 @@ import * as Yup from 'yup';
 export const signUpValidationSchema = Yup.object().shape({
     firstName: Yup.string().trim().required('First Name is required'),
     lastName: Yup.string().trim().required('Last Name is required'),
+    mobile: Yup.string()
+        .required('Mobile number is required')
+        .matches(/^(98|97)\d{8}$/, 'Mobile number is invalid'),
     email: Yup.string()
         .email('Invalid email format')
         .trim()
